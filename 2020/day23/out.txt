@@ -1,0 +1,51 @@
+-- move 1 --
+cups: (3) 8  9  1  2  5  4  6  7 
+pick up: 8, 9, 1
+destination: 2
+
+-- move 2 --
+cups:  3 (2) 8  9  1  5  4  6  7 
+pick up: 8, 9, 1
+destination: 7
+
+-- move 3 --
+cups:  3  2 (5) 4  6  7  8  9  1 
+pick up: 4, 6, 7
+destination: 3
+
+-- move 4 --
+cups:  3  4  6 (7) 2  5  8  9  1 
+pick up: 2, 5, 8
+destination: 6
+
+-- move 5 --
+cups:  3  4  6  2 (5) 8  7  9  1 
+pick up: 8, 7, 9
+destination: 4
+
+-- move 6 --
+cups:  3  4  8  7  9 (6) 2  5  1 
+pick up: 2, 5, 1
+destination: 4
+
+-- move 7 --
+cups:  3  4  2  5  1  8 (7) 9  6 
+pick up: 9, 6, 3
+destination: 2
+
+-- move 8 --
+cups:  4  2  9  6  3  5  1 (8) 7 
+pick up: 7, 4, 9
+destination: 5
+
+-- move 9 --
+cups:  2  6  3  5  7  4  9  1 (8)
+pick up: 2, 3, 7
+destination: 1
+
+-- move 10 --
+cups: (6) 5  4  9  1  2  3  7  8 
+pick up: 5, 4, 9
+destination: 3
+
+612354978
