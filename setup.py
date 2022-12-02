@@ -37,7 +37,7 @@ def parse_arguments():
     parser.add_argument("year", type=int)
     parser.add_argument("day", type=int)
 
-    parser.add_argument("-l", "--language", choices=["rust", "python"], default="python")
+    parser.add_argument("-l", "--language", choices=["rust", "python", "nim"], default="python")
 
 
     return parser.parse_args()
