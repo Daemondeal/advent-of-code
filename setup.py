@@ -16,6 +16,11 @@ def setup_python(dir: str, input: str):
     write_all(f"{dir}/input.txt", input)
     shutil.copy2("./templates/python.py", f"{dir}/main.py")
 
+def setup_nim(dir: str, input: str):
+    write_all(f"{dir}/input.txt", input)
+    shutil.copy2("./templates/nim.nim", f"{dir}/main.nim")
+
+
 def setup_rust(dir: str, input: str):
     os.system(f"cargo init {dir}/ --bin --vcs none")
     write_all(f"{dir}/input.txt", input)
@@ -65,6 +70,8 @@ def main():
         setup_python(directory, input)
     elif args.language == "rust":
         setup_rust(directory, input)
+    elif args.language == "nim":
+        setup_nim(directory, input)
     else:
         print(f"Invalid language: {args.language}")
 
