@@ -18,16 +18,15 @@ fn main() {
 }
 
 fn process_input(input: &str) -> (Vec<Vec<u8>>, Vec<(usize, usize, usize)>) {
-    let mut line_iter = input.split("\n");
+    let mut line_iter = input.split('\n');
     let mut bins = vec![];
 
-    while let Some(line) = line_iter.next() {
+    for line in line_iter.by_ref() {
         if line.starts_with(" 1 ") {
             break;
         }
 
-        let mut i = 0;
-        for chunk in line.as_bytes().chunks(4) {
+        for (i, chunk) in line.as_bytes().chunks(4).enumerate() {
             if bins.len() <= i {
                 bins.push(vec![]);
             }
@@ -35,8 +34,6 @@ fn process_input(input: &str) -> (Vec<Vec<u8>>, Vec<(usize, usize, usize)>) {
             if chunk[1] != 32 {
                 bins[i].insert(0, chunk[1]);
             }
-
-            i += 1;
         }
     }
     line_iter.next();

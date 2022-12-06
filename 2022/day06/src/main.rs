@@ -16,13 +16,9 @@ fn main() {
     println!("B: {}", solve_b(&input));
 }
 
-// fn process_input(input: &str) -> Vec<String> {
-//     input.split("\n").map(|x| x.to_string()).collect()
-// }
-
 fn solve_a(input: &str) -> i32 {
     for (i, chunk) in input.as_bytes().windows(4).enumerate() {
-        let uniques: HashSet<u8> = chunk.iter().map(|x| *x).collect();
+        let uniques: HashSet<u8> = chunk.iter().copied().collect();
         if uniques.len() == chunk.len() {
             return i as i32 + 4;
         }
@@ -33,7 +29,7 @@ fn solve_a(input: &str) -> i32 {
 
 fn solve_b(input: &str) -> i32 {
     for (i, chunk) in input.as_bytes().windows(14).enumerate() {
-        let uniques: HashSet<u8> = chunk.iter().map(|x| *x).collect();
+        let uniques: HashSet<u8> = chunk.iter().copied().collect();
         if uniques.len() == chunk.len() {
             return i as i32 + 14;
         }
