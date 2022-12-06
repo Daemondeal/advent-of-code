@@ -1,3 +1,4 @@
+from tqdm import tqdm
 from enum import Enum, auto
 
 class Direction(Enum):
@@ -65,8 +66,7 @@ def solve_2():
     ]
 
 
-    for _ in range(ITERS):  
-        print(_)  
+    for _ in tqdm(range(ITERS)):  
         to_flip = []
         for q in range(MAP_SIZE):
             for r in range(MAP_SIZE):
