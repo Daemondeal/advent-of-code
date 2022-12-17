@@ -1,8 +1,6 @@
 use std::collections::BinaryHeap;
-use std::collections::HashSet;
 use std::env;
 use std::fs;
-use std::time::Instant;
 
 use regex::Regex;
 
@@ -38,15 +36,21 @@ fn main() {
     println!("B: {}", solve_b(&input));
 }
 
-fn process_input(input: &str) -> ValveSystem {
+fn process_input(input: &str) -> (ValveSystem, usize) {
     let input_re = Regex::new(VALVE_REGEX).unwrap();
 
     let mut raw_valves = vec![];
+    let mut starting = 0;
 
     for capture in input_re.captures_iter(input) {
         let name = capture[1].to_string();
         let flow_rate: i64 = capture[2].parse().unwrap();
         let connections: Vec<String> = capture[3].split(", ").map(|x| x.to_string()).collect();
+
+        if &name == "AA" {
+            starting = raw_valves.len();
+        }
+
         raw_valves.push((name, flow_rate, connections));
     }
 
@@ -61,13 +65,13 @@ fn process_input(input: &str) -> ValveSystem {
         for connection in connections {
             let to = raw_valves
                 .iter()
-                .position(|x| &x.0 == connection.trim())
+                .position(|x| x.0 == connection.trim())
                 .unwrap();
             system.tunnels[i].push(to);
         }
     }
 
-    system
+    (system, starting)
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -78,7 +82,10 @@ struct State {
 
 impl Ord for State {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.cost.cmp(&other.cost)
+        other
+            .cost
+            .cmp(&self.cost)
+            .then_with(|| self.position.cmp(&other.position))
     }
 }
 
@@ -89,7 +96,7 @@ impl PartialOrd for State {
 }
 
 // Dijkstra
-fn find_path(system: &ValveSystem, from: usize, to: usize) -> Option<usize> {
+fn find_path_length(system: &ValveSystem, from: usize, to: usize) -> Option<i64> {
     if from == to {
         return Some(0);
     }
@@ -107,7 +114,7 @@ fn find_path(system: &ValveSystem, from: usize, to: usize) -> Option<usize> {
 
     while let Some(State { cost, position }) = queue.pop() {
         if position == to {
-            return Some(cost);
+            return Some(cost as i64);
         }
 
         if cost > dist[position] {
@@ -130,48 +137,95 @@ fn find_path(system: &ValveSystem, from: usize, to: usize) -> Option<usize> {
     None
 }
 
-fn paths_rec(
+fn find_best_path_recursively(
     system: &ValveSystem,
     non_zero_valves: &[usize],
-    costs: &[Vec<usize>],
-    open_valves: &mut HashSet<usize>,
-    time_remaining: usize,
-    position: usize,
-    accumulated_pressure: usize,
-) -> usize {
-    let mut max_val = 0;
+    costs: &[Vec<i64>],
+    open_valves: usize,
 
-    for next in non_zero_valves {
-        if open_valves.contains(next) {
+    human_position: usize,
+    elephant_position: usize,
+
+    human_remaining: i64,
+    elephant_remaining: i64,
+
+    path_pressure: i64,
+
+    maximum_pressure: &mut i64,
+) {
+    for human_next in non_zero_valves {
+        if human_remaining < elephant_remaining {
+            break;
+        }
+        if open_valves & (1 << human_next) > 0 {
             continue;
         }
-        let time_cost = costs[position][*next] + 1;
 
-        if time_remaining >= time_cost {
-            open_valves.insert(*next);
-            let pressure = system.valves[*next] as usize;
-            let remaining_after_valve = time_remaining - time_cost;
+        let human_pressure = system.valves[*human_next];
+        let human_time_cost = (costs[human_position][*human_next] + 1) as i64;
+        let time_human = human_remaining - human_time_cost;
 
-            max_val = (paths_rec(
-                system,
-                non_zero_valves,
-                costs,
-                open_valves,
-                remaining_after_valve,
-                *next,
-                accumulated_pressure,
-            ) + pressure * remaining_after_valve)
-                .max(max_val);
-
-            open_valves.remove(next);
+        if human_time_cost > human_remaining {
+            continue;
         }
+        let next_open_valves = open_valves | 1 << human_next;
+
+        let new_total_pressure = path_pressure + human_pressure * time_human;
+
+        find_best_path_recursively(
+            system,
+            non_zero_valves,
+            costs,
+            next_open_valves,
+            *human_next,
+            elephant_position,
+            time_human,
+            elephant_remaining,
+            new_total_pressure,
+            maximum_pressure,
+        );
     }
 
-    max_val
+    for elephant_next in non_zero_valves {
+        if elephant_remaining < human_remaining {
+            break;
+        }
+        if open_valves & (1 << elephant_next) > 0 {
+            continue;
+        }
+
+        let elephant_pressure = system.valves[*elephant_next];
+        let elephant_time_cost = (costs[elephant_position][*elephant_next] + 1) as i64;
+        let time_elephant = elephant_remaining - elephant_time_cost;
+
+        if elephant_time_cost > elephant_remaining {
+            continue;
+        }
+        let next_open_valves = open_valves | 1 << elephant_next;
+
+        let new_total_pressure = path_pressure + elephant_pressure * time_elephant;
+
+        find_best_path_recursively(
+            system,
+            non_zero_valves,
+            costs,
+            next_open_valves,
+            human_position,
+            *elephant_next,
+            human_remaining,
+            time_elephant,
+            new_total_pressure,
+            maximum_pressure,
+        );
+    }
+
+    if path_pressure > *maximum_pressure {
+        *maximum_pressure = path_pressure;
+    }
 }
 
-fn solve_a(input: &str) -> usize {
-    let system = process_input(input);
+fn solve_a(input: &str) -> i64 {
+    let (system, starting) = process_input(input);
 
     let non_zero_valves: Vec<_> = system
         .valves
@@ -184,30 +238,65 @@ fn solve_a(input: &str) -> usize {
     for i in 0..system.valves.len() {
         let mut row = vec![];
         for j in 0..system.valves.len() {
-            row.push(find_path(&system, i, j).unwrap_or(usize::MAX));
+            row.push(find_path_length(&system, i, j).unwrap_or(i64::MAX));
         }
 
         costs.push(row);
     }
 
-    let mut open_valves = HashSet::new();
+    // let mut open_valves = HashSet::new();
+    let mut maximum_pressure = 0;
 
-    let start = Instant::now();
-    let best = paths_rec(
+    find_best_path_recursively(
         &system,
         &non_zero_valves,
         &costs,
-        &mut open_valves,
+        0,
+        starting,
+        0,
         30,
         0,
         0,
+        &mut maximum_pressure,
     );
 
-    println!("Time Taken: {:?}", Instant::now() - start);
-
-    best
+    maximum_pressure
 }
 
-fn solve_b(_input: &str) -> i32 {
-    0
+fn solve_b(input: &str) -> i64 {
+    let (system, starting) = process_input(input);
+
+    let non_zero_valves: Vec<_> = system
+        .valves
+        .iter()
+        .enumerate()
+        .filter_map(|(i, v)| if *v == 0 { None } else { Some(i) })
+        .collect();
+
+    let mut costs = vec![];
+    for i in 0..system.valves.len() {
+        let mut row = vec![];
+        for j in 0..system.valves.len() {
+            row.push(find_path_length(&system, i, j).unwrap_or(i64::MAX));
+        }
+
+        costs.push(row);
+    }
+
+    let mut maximum_pressure = 0;
+
+    find_best_path_recursively(
+        &system,
+        &non_zero_valves,
+        &costs,
+        0,
+        starting,
+        starting,
+        26,
+        26,
+        0,
+        &mut maximum_pressure,
+    );
+
+    maximum_pressure
 }
