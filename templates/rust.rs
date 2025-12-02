@@ -15,14 +15,14 @@ fn main() {
     println!("B: {}", solve_b(&input));
 }
 
-fn process_input(input: &str) -> Vec<i32> {
+fn process_input(input: &str) -> Vec<i64> {
     todo!()
 }
 
-fn solve_a(input: &str) -> i32 {
+fn solve_a(input: &str) -> i64 {
     0
 }
 
-fn solve_b(input: &str) -> i32 {
+fn solve_b(input: &str) -> i64 {
     0
 }
