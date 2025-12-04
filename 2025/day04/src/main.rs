@@ -21,6 +21,22 @@ struct Map {
     height: usize,
 }
 
+impl Map {
+    fn get(&self, x: i32, y: i32) -> Option<bool> {
+        if x >= 0 && (x as usize) < self.width && y >= 0 && (y as usize) < self.height {
+            Some(self.data[y as usize][x as usize])
+        } else {
+            None
+        }
+    }
+
+    fn clear(&mut self, x: i32, y: i32) {
+        if x >= 0 && (x as usize) < self.width && y >= 0 && (y as usize) < self.height {
+            self.data[y as usize][x as usize] = false;
+        }
+    }
+}
+
 fn process_input(input: &str) -> Map {
     let data: Vec<Vec<bool>> = input
         .split("\n")
@@ -56,22 +72,17 @@ fn solve_a(input: &str) -> i64 {
 
     let mut count = 0;
 
-    for y in 0..map.height {
-        for x in 0..map.width {
-            if !map.data[y][x] {
+    for y in 0..(map.height as i32) {
+        for x in 0..(map.width as i32) {
+            if map.get(x, y) != Some(true) {
                 continue;
             }
 
             let mut rolls = 0;
             for i in [-1, 0, 1] {
                 for j in [-1, 0, 1] {
-                    let xx = x as i32 + i;
-                    let yy = y as i32 + j;
-
-                    if xx > 0 && xx < map.width as i32 && yy > 0 && yy < map.height as i32 && (i != 0 || j != 0) {
-                        if map.data[xx as usize][yy as usize] {
-                            rolls += 1
-                        }
+                    if (i != 0 || j != 0) && map.get(x+i, y+j) == Some(true) {
+                        rolls += 1;
                     }
                 }
             }
@@ -86,5 +97,43 @@ fn solve_a(input: &str) -> i64 {
 }
 
 fn solve_b(input: &str) -> i64 {
-    0
+    let mut map = process_input(input);
+    let mut total_removed = 0;
+
+    let mut to_remove = vec![];
+
+    loop {
+        to_remove.clear();
+        for y in 0..(map.height as i32) {
+            for x in 0..(map.width as i32) {
+                if map.get(x, y) != Some(true) {
+                    continue;
+                }
+
+                let mut rolls = 0;
+                for i in [-1, 0, 1] {
+                    for j in [-1, 0, 1] {
+                        if (i != 0 || j != 0) && map.get(x+i, y+j) == Some(true) {
+                            rolls += 1;
+                        }
+                    }
+                }
+
+                if rolls < 4 {
+                    to_remove.push((x, y))
+                }
+            }
+        }
+
+        if to_remove.len() == 0 {
+            break;
+        }
+
+        total_removed += to_remove.len();
+        for (x, y) in &to_remove {
+            map.clear(*x, *y);
+        }
+    }
+
+    total_removed as i64
 }
